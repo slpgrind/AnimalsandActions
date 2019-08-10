@@ -6,6 +6,7 @@
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
 var animalCurr = '';
+var speechText = '';
 //0
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -26,61 +27,31 @@ const LaunchRequestHandler = {
     }
 };
 
-// const HelloWorldIntentHandler = {
-//     canHandle(handlerInput) {
-//         return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-//             && handlerInput.requestEnvelope.request.intent.name === 'HelloWorldIntent';
-//     },
-//     handle(handlerInput) {
-//         const speechText = 'Yes!';
-//         return handlerInput.responseBuilder
-//             .speak('<speak>Identify this animal <break time="3s"> <audio src="http://foo.com/elephant.mp3"></speak>')
-//             //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-//             .getResponse();
-//     }
-// };
-
-// const startQuizMessage = `Let's begin the sound game.`;
-
-// const YesLaunchIntentHandler = {
-//     canHandle(handlerInput) {
-//         return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-//             && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.YesIntent'
-//             && handlerInput.attributesManager.getSessionAttributes().state = 'Launch';
-//     },
-//     handle(handlerInput) {
-//         const speechText = 'Welcome to KidsGame, you will guess the sound I play. Are you ready?'; //add more breaths
-//         const attributes = handlerInput.attributesManager.getSessionAttributes();
-//         attributes.State = 'TestNoun';
-//         handlerInput.attributesManager.setAttributes(attributes);
-//         return handlerInput.responseBuilder.speak(speechText).reprompt(speechText).getResponse();
-//     }
-// };
-
-
-//
 const NounLaunchIntentHandler0 = {
-    canHandle(handlerInput) {
-        return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
-            handlerInput.requestEnvelope.request.intent.name === 'AnimalIntent' //change this later if need be
-            &&
-            handlerInput.attributesManager.getSessionAttributes().state === 'Cat';
+    canHandle(handlerInput){
+       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+            && handlerInput.requestEnvelope.request.intent.name === 'AnimalIntent' //change this later if need be
+            && handlerInput.attributesManager.getSessionAttributes().state === 'Cat';
     },
-    handle(handlerInput) {
+    handle(handlerInput){
         const attributes = handlerInput.attributesManager.getSessionAttributes();
+        attributes.counter += 1
         const response = handlerInput.responseBuilder;
-        attributes.state = 'Dog';
+        const resAnswer = checkIt(handlerInput.requestEnvelope.request.intent.slots.Animal.value,'cat' );
+        const isAnswer = check2(handlerInput.requestEnvelope.request.intent.slots.Animal.value,'cat'); //here is where the repetition begins
+        if(!isAnswer){
+            attributes.state = 'Cat';
+            speechText = resAnswer + '<audio src="soundbank://soundlibrary/animals/amzn_sfx_cat_meow_1x_01"/>' + ' <break time="2s"/> What makes this sound? <audio src="soundbank://soundlibrary/animals/amzn_sfx_cat_meow_1x_01"/>';
+          }
+        else{
+            attributes.state = 'Dog';
+            speechText = resAnswer + 'What makes this sound? <audio src="soundbank://soundlibrary/animals/amzn_sfx_dog_med_bark_2x_01"/>';
 
-        askQuestion(handlerInput);
+        }
         handlerInput.attributesManager.setSessionAttributes(attributes);
         const item = attributes.quizItem;
         const property = attributes.quizProperty;
-
-        const resAnswer = checkIt(handlerInput.requestEnvelope.request.intent.slots.Animal.value, 'cat');
-        animalCurr = 'dog';
-        console.log(resAnswer);
-        console.log(resAnswer + '<audio src="soundbank://soundlibrary/animals/amzn_sfx_dog_med_bark_2x_01"/> What is it?');
-        return response.speak(resAnswer + '<audio src="soundbank://soundlibrary/animals/amzn_sfx_dog_med_bark_2x_01"/> What is it?').withShouldEndSession(false).getResponse();
+        return response.speak(speechText).withShouldEndSession(false).getResponse();
     }
 };
 
@@ -185,8 +156,8 @@ const NounLaunchIntentHandler4 = {
         const resAnswer = checkIt(handlerInput.requestEnvelope.request.intent.slots.Animal.value, 'elephant');
         animalCurr = 'wolf';
         return handlerInput.responseBuilder
-            .speak(resAnswer + '<audio src="soundbank://soundlibrary/animals/amzn_sfx_wolf_03"/> What is it?')
-            .reprompt('<audio src="soundbank://soundlibrary/animals/amzn_sfx_wolf_03"/> What is it?')
+            .speak(resAnswer + '<audio src="soundbank://soundlibrary/animals/amzn_sfx_wolf_young_howl_01"/> What is it?')
+            .reprompt('<audio src="soundbank://soundlibrary/animals/amzn_sfx_wolf_young_howl_01"/> What is it?')
             .withShouldEndSession(false)
             .getResponse();
     }
@@ -197,7 +168,7 @@ const NounLaunchIntentHandler5 = {
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'AnimalIntent' //change this later if need be
             &&
-            handlerInput.attributesManager.getSessionAttributes().state === 'End';
+            handlerInput.attributesManager.getSessionAttributes().state === 'Wolf';
     },
     handle(handlerInput) {
         const attributes = handlerInput.attributesManager.getSessionAttributes();
@@ -219,19 +190,14 @@ function checkIt(input, output) {
     if (input === output) {
         return "That's correct. Good job.";
     } else {
-        return "Almost there, " + "a " + animalCurr + " makes that sound.";
+        return "Almost there, " + "a " + output + " says ";
     }
 }
 
+function check2(input, output){
+    return input === output;
+}
 
-
-// const YesGameIntentHandler = {
-//     canHandle(handlerInput) {
-//         return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-//             && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.YesIntent'
-//             && handlerInput.attributesManager.getSessionAttributes().State = 'InGame';
-//     }
-// };
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
@@ -253,8 +219,7 @@ const CancelAndStopIntentHandler = {
                 handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Nice game. Let'
-        s play next time.Goodbye!';
+        const speechText = 'Nice game. Lets play next time.Goodbye!';
         return handlerInput.responseBuilder
             .speak(speechText)
             .getResponse();
@@ -339,7 +304,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         NounLaunchIntentHandler0,
         NounLaunchIntentHandler1,
         NounLaunchIntentHandler2,
-        NounLaunchIntentHandler6,
+        NounLaunchIntentHandler3,
+        NounLaunchIntentHandler4,
+        NounLaunchIntentHandler5,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
